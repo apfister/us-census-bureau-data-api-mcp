@@ -1,38 +1,38 @@
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+
+import { createMcpServer } from './create-server.js'
+import { startHttpServer } from './http.js'
+
+const transportMode = (process.env.MCP_TRANSPORT ?? 'stdio').toLowerCase()
 const enableDebugLogs = process.env.DEBUG_LOGS === 'true'
 
-if (!enableDebugLogs) {
+// Standard output carries MCP messages in stdio mode, so ordinary logs must
+// remain disabled unless debugging is explicitly enabled.
+if (transportMode === 'stdio' && !enableDebugLogs) {
   console.log = () => {}
   console.info = () => {}
   console.warn = () => {}
 }
 
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
-import { MCPServer } from './server.js'
+async function main(): Promise<void> {
+  if (transportMode === 'http') {
+    await startHttpServer()
+    return
+  }
 
-import { FetchAggregateDataTool } from './tools/fetch-aggregate-data.tool.js'
-import { FetchDatasetGeographyTool } from './tools/fetch-dataset-geography.tool.js'
-import { ListDatasetsTool } from './tools/list-datasets.tool.js'
-import { ResolveGeographyFipsTool } from './tools/resolve-geography-fips.tool.js'
-import { SearchDataTablesTool } from './tools/search-data-tables.tool.js'
+  if (transportMode !== 'stdio') {
+    throw new Error(
+      `Unsupported MCP_TRANSPORT value: ${transportMode}. Use "stdio" or "http".`,
+    )
+  }
 
-import { PopulationPrompt } from './prompts/population.prompt.js'
-
-// MCP Server Setup
-async function main() {
-  const mcpServer = new MCPServer('census-api', '0.1.0')
-
-  // Register prompts
-  mcpServer.registerPrompt(new PopulationPrompt())
-
-  // Register tools
-  mcpServer.registerTool(new FetchAggregateDataTool())
-  mcpServer.registerTool(new FetchDatasetGeographyTool())
-  mcpServer.registerTool(new ListDatasetsTool())
-  mcpServer.registerTool(new ResolveGeographyFipsTool())
-  mcpServer.registerTool(new SearchDataTablesTool())
-
+  const mcpServer = createMcpServer()
   const transport = new StdioServerTransport()
+
   await mcpServer.connect(transport)
 }
 
-main().catch(console.error)
+main().catch((error: unknown) => {
+  console.error(error)
+  process.exitCode = 1
+})
