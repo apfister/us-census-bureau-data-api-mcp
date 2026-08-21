@@ -7,7 +7,7 @@ COPY package*.json ./
 COPY tsconfig.docker.json ./tsconfig.json
 
 # Install all dependencies (including dev for building)
-RUN --mount=type=cache,target=/root/.npm npm ci --ignore-scripts
+RUN npm ci --ignore-scripts
 
 COPY src/ ./src/
 
@@ -34,6 +34,9 @@ RUN echo "=== Copied dist files ===" && ls -la dist/ || echo "No dist directory 
 RUN echo "=== Looking for index.js ===" && ls -la dist/index.js || echo "index.js not found"
 
 ENV NODE_ENV=production
+ENV PORT=8080
+
+EXPOSE 8080
 
 # Install only production dependencies
 RUN npm ci --ignore-scripts --omit-dev

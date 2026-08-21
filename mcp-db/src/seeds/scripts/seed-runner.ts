@@ -191,7 +191,33 @@ export class SeedRunner {
   private async performFetch(url: string, retryCount = 0): Promise<any> {
     const urlObj = new URL(url)
 
-    console.log(`Making API request to: ${urlObj.toString()}`)
+    // Census dataset queries now require an API key. Add it here so database
+    // seed requests use the same CENSUS_API_KEY as the MCP server.
+    const isCensusDataQuery =
+      urlObj.hostname === 'api.census.gov' &&
+      /^\/data\/\d{4}\//.test(urlObj.pathname)
+
+    if (isCensusDataQuery) {
+      const apiKey = process.env.CENSUS_API_KEY
+
+      if (!apiKey) {
+        throw new Error(
+          'CENSUS_API_KEY is required for Census Data API seed requests',
+        )
+      }
+
+      if (!urlObj.searchParams.has('key')) {
+        urlObj.searchParams.set('key', apiKey)
+      }
+    }
+
+    // Never expose the API key in local or Azure logs.
+    const logUrl = new URL(urlObj.toString())
+    if (logUrl.searchParams.has('key')) {
+      logUrl.searchParams.set('key', 'REDACTED')
+    }
+
+    console.log(`Making API request to: ${logUrl.toString()}`)
 
     try {
       const response = await fetch(urlObj.toString())
