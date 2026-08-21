@@ -59,6 +59,18 @@ Note that the `CENSUS_API_KEY` variable is required. This defines the `env` vari
 
 Be sure to update the path to the `us-census-bureau-data-api-mcp` directory in `args` and provide a valid `CENSUS_API_KEY`.
 
+### Remote HTTP transport
+
+Set `MCP_TRANSPORT=http` to expose the Streamable HTTP endpoint at `/mcp`.
+HTTP mode requires `MCP_AUTH_KEY` at runtime and fails closed when it is absent.
+Clients must send the configured value as an `Authorization: Bearer <key>`
+header on every `/mcp` request. The `/health` endpoint remains public and does
+not disclose authentication configuration.
+
+Generate a high-entropy key and store it in the deployment platform's secret
+store. Never commit the value, place it in a container image, pass it in a URL,
+or expose it to a browser application.
+
 ### Updating the MCP Server
 When a new version of this project is released, you will need to rebuild the production environment for the latest features. From the `mcp-db/` directory, run the following:
 

@@ -2,6 +2,7 @@ import express, { type Request, type Response } from 'express'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 
 import { createMcpServer } from './create-server.js'
+import { createMcpBearerAuth } from './http-auth.js'
 
 export async function startHttpServer(): Promise<void> {
   const app = express()
@@ -14,6 +15,8 @@ export async function startHttpServer(): Promise<void> {
       service: 'census-api-mcp',
     })
   })
+
+  app.use('/mcp', createMcpBearerAuth())
 
   const mcpServer = createMcpServer()
 
